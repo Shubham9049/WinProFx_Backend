@@ -128,3 +128,86 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+exports.requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+
+    user.resetOtp = otp;
+    user.resetOtpExpires = otpExpires;
+    await user.save();
+
+    // Send Email
+    await sendEmail({
+      to: email,
+      subject: "Password Reset OTP",
+      html: `<p>Your OTP to reset your password is <strong>${otp}</strong></p>`,
+    });
+
+    // Send WhatsApp
+    await sendWhatsAppOTP(user.phone, otp);
+
+    res.status(200).json({ message: "OTP sent to email and WhatsApp" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to send reset OTP", error: err.message });
+  }
+};
+
+exports.verifyAndResetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !user.resetOtp || !user.resetOtpExpires) {
+      return res.status(400).json({ message: "Invalid request or OTP" });
+    }
+
+    // Check if OTP expired
+    if (new Date() > user.resetOtpExpires) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // Check if OTP matches
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({ message: "Incorrect OTP" });
+    }
+
+    // Hash and update the password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+
+    // Clear OTP fields
+    user.resetOtp = null;
+    user.resetOtpExpires = null;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({
+      message: "Error resetting password",
+      error: err.message,
+    });
+  }
+};
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select(
+      "-password -otp -otpExpires -resetOtp -resetOtpExpires"
+    );
+    res.json(users);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to fetch users", error: err.message });
+  }
+};
