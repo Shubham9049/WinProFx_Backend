@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/brokers", brokerRoutes);
-app.use("api/moneyplant", moneyplantRoutes);
+app.use("/api/moneyplant", moneyplantRoutes);
 app.use("/", (req, res) => {
   res.send("I ..I...AM ...IRONMAN🫰");
 });
