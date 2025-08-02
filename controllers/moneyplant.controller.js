@@ -128,3 +128,51 @@ exports.updatePassword = async (req, res) => {
     });
   }
 };
+
+exports.addBalance = async (req, res) => {
+  const { accountno, amount, orderid } = req.body;
+
+  if (!accountno || !amount || !orderid) {
+    return res.status(400).json({
+      success: false,
+      message: "accountno, amount, and orderid are required",
+    });
+  }
+
+  if (orderid.length > 16) {
+    return res.status(400).json({
+      success: false,
+      message: "orderid must be 16 characters or fewer",
+    });
+  }
+
+  try {
+    const response = await axios.post(
+      "https://api.moneyplantfx.com/WSMoneyplant.aspx?type=SNDPAddBalance",
+      {
+        accountno,
+        amount,
+        orderid,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const { response: status, message } = response.data;
+
+    if (status === "success") {
+      return res.status(200).json({ success: true, message });
+    } else {
+      return res.status(400).json({ success: false, message });
+    }
+  } catch (error) {
+    console.error("Add balance error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+    });
+  }
+};
