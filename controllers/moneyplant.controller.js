@@ -95,3 +95,36 @@ exports.getAccountSummary = async (req, res) => {
     });
   }
 };
+
+exports.updatePassword = async (req, res) => {
+  const { accountno, newpassword } = req.body;
+
+  try {
+    const response = await axios.post(
+      "https://api.moneyplantfx.com/WSMoneyplant.aspx?type=SNDPChangePassword", // replace with actual URL
+      {
+        accountno,
+        newpassword,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const { response: status, message } = response.data;
+
+    if (status === "success") {
+      return res.status(200).json({ success: true, message });
+    } else {
+      return res.status(400).json({ success: false, message });
+    }
+  } catch (error) {
+    console.error("Error updating password:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+    });
+  }
+};
