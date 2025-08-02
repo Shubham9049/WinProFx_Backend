@@ -52,3 +52,46 @@ exports.registerUserWithMoneyPlant = async (req, res) => {
     });
   }
 };
+
+exports.getAccountSummary = async (req, res) => {
+  const { accountno } = req.body; // Must come from body
+
+  if (!accountno) {
+    return res
+      .status(400)
+      .json({ success: false, message: "accountno is required" });
+  }
+
+  try {
+    const { data } = await axios({
+      method: "post",
+      url: "https://api.moneyplantfx.com/WSMoneyplant.aspx",
+      params: {
+        type: "SNDPCheckBalance",
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: {
+        accountno,
+      },
+    });
+
+    if (data.response === "failed") {
+      return res.status(400).json({
+        success: false,
+        message: data.message || "Failed to fetch account data",
+      });
+    }
+
+    return res.status(200).json({
+      data,
+    });
+  } catch (error) {
+    console.error("MoneyPlant API error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong while fetching account summary.",
+    });
+  }
+};
