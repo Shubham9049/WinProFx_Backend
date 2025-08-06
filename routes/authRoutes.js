@@ -13,6 +13,7 @@ const {
   updateUserProfile,
   updateDocuments,
   updateBankDetails,
+  changePassword,
 } = require("../controllers/authController");
 const upload = require("../middleware/cloudinaryUploader");
 
@@ -43,5 +44,7 @@ router.put(
 );
 
 router.put("/bank/:email", updateBankDetails);
+
+router.put("/change-password/:email", changePassword);
 
 module.exports = router;
