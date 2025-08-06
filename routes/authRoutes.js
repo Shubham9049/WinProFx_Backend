@@ -9,7 +9,12 @@ const {
 
   getAllUsers,
   getUserByEmail,
+  uploadProfileImage,
+  updateUserProfile,
+  updateDocuments,
+  updateBankDetails,
 } = require("../controllers/authController");
+const upload = require("../middleware/cloudinaryUploader");
 
 router.post("/register", register);
 router.post("/verify-otp", verifyOTP); // Verifies OTP and finalizes registration
@@ -18,5 +23,25 @@ router.post("/request-reset", requestPasswordReset);
 router.post("/verify-reset-otp", verifyAndResetPassword);
 router.get("/users", getAllUsers); // ⛔ secure with authMiddleware in production
 router.get("/user/:email", getUserByEmail);
+router.put(
+  "/profile-image/:email",
+  upload.single("profileImage"),
+  uploadProfileImage
+);
+
+router.put("/update-profile/:email", updateUserProfile);
+
+router.put(
+  "/documents/:email",
+  upload.fields([
+    { name: "identityFront", maxCount: 1 },
+    { name: "identityBack", maxCount: 1 },
+    { name: "addressProof", maxCount: 1 },
+    { name: "selfieProof", maxCount: 1 },
+  ]),
+  updateDocuments
+);
+
+router.put("/bank/:email", updateBankDetails);
 
 module.exports = router;

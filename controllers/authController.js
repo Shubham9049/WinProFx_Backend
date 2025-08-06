@@ -232,3 +232,134 @@ exports.getUserByEmail = async (req, res) => {
       .json({ message: "Failed to fetch user", error: err.message });
   }
 };
+
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file received in request." });
+    }
+
+    const profileImage = req.file.path;
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      { profileImage },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    console.error("Backend error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const updateFields = req.body;
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    console.error("Update profile error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+exports.updateDocuments = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    console.log("FILES:", req.files); // Debug
+
+    const identityFront = req.files?.identityFront?.[0]?.path;
+    const identityBack = req.files?.identityBack?.[0]?.path;
+    const addressProof = req.files?.addressProof?.[0]?.path;
+    const selfieProof = req.files?.selfieProof?.[0]?.path;
+
+    const updateFields = {};
+    if (identityFront) updateFields.identityFront = identityFront;
+    if (identityBack) updateFields.identityBack = identityBack;
+    if (addressProof) updateFields.addressProof = addressProof;
+    if (selfieProof) updateFields.selfieProof = selfieProof;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No files uploaded" });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Documents updated successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("Update failed:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// 3. Update Bank Details by email
+exports.updateBankDetails = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const {
+      accountHolderName,
+      accountNumber,
+      ifscCode,
+      iban,
+      bankName,
+      bankAddress,
+    } = req.body;
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          accountHolderName,
+          accountNumber,
+          ifscCode,
+          iban,
+          bankName,
+          bankAddress,
+        },
+      },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
