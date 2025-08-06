@@ -5,6 +5,7 @@ const authRoutes = require("./routes/authRoutes");
 const brokerRoutes = require("./routes/brokerRoutes");
 const cors = require("cors");
 const moneyplantRoutes = require("./routes/moneyplant.routes");
+const ticketRoutes = require("./routes/ticketRoutes");
 
 require("dotenv").config();
 connect();
@@ -16,6 +17,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/brokers", brokerRoutes);
 app.use("/api/moneyplant", moneyplantRoutes);
+app.use("/api/tickets", ticketRoutes);
+
 app.use("/", (req, res) => {
   res.send("I ..I...AM ...IRONMAN🫰");
 });
