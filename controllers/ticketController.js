@@ -46,7 +46,9 @@ exports.getUserTickets = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const tickets = await Ticket.find({ user: user._id });
+    const tickets = await Ticket.find({ user: user._id }).sort({
+      createdAt: -1,
+    });
     res.status(200).json(tickets);
   } catch (err) {
     res
