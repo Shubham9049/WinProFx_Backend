@@ -1,3 +1,4 @@
+// models/Ticket.js
 const mongoose = require("mongoose");
 
 const ticketSchema = new mongoose.Schema(
@@ -22,6 +23,10 @@ const ticketSchema = new mongoose.Schema(
       enum: ["Open", "Pending", "Closed"],
       default: "Open",
     },
+
+    // NEW: unread counters
+    unreadByUser: { type: Number, default: 0 }, // messages from Admin not yet read by User
+    unreadByAdmin: { type: Number, default: 0 }, // messages from User not yet read by Admin
   },
   { timestamps: true }
 );
