@@ -2,18 +2,19 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
   {
-    transactionId: { type: String, unique: true }, // maps to "id"
-    status: String, // "completed", "failed", etc.
-    merchantTxnId: String, // "merchant_txn_id"
-    userId: String, // "merchant_user_id"
-    amount: String, // in "500.00"
-    type: String, // "deposit" or "withdraw"
-    addedOn: String, // timestamp
-    refId: String, // "ref_id"
-    gateway: Number, // 1, 2, etc.
-    merchant: Number, // merchant ID
-    wallet: Number, // wallet ID
-    currency: String, // usually "INR"
+    transactionId: { type: String, required: true }, // API's transaction id
+    status: { type: String, required: true },
+    merchantTxnId: { type: String, required: true },
+    merchantUserId: { type: String, required: true },
+    amount: { type: Number, required: true },
+    type: { type: String, required: true },
+    addedOn: { type: Date, required: true },
+    refId: { type: String },
+    gateway: { type: Number },
+    merchant: { type: Number },
+    wallet: { type: Number },
+    currency: { type: String, default: "INR" },
+    transactionPayinRequests: { type: Array, default: [] },
   },
   { timestamps: true }
 );
