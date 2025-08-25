@@ -4,12 +4,10 @@ const brokerSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
-
       trim: true,
     },
     lastName: {
       type: String,
-
       trim: true,
     },
     email: {
@@ -21,7 +19,6 @@ const brokerSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-
       trim: true,
     },
     message: {
@@ -37,6 +34,12 @@ const brokerSchema = new mongoose.Schema(
     },
     otpExpires: {
       type: Date,
+    },
+    // Field used only for TTL
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+      index: { expires: 0 }, // TTL index -> deletes doc when expiresAt is reached
     },
   },
   { timestamps: true }

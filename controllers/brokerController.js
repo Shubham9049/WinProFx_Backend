@@ -21,6 +21,8 @@ exports.requestBrokerOTP = async (req, res) => {
     } else {
       broker.otp = otp;
       broker.otpExpires = otpExpires;
+      broker.isVerified = false; // reset verification if retrying
+      broker.expiresAt = new Date(Date.now() + 10 * 60 * 1000); // refresh TTL
     }
 
     await broker.save();
@@ -68,6 +70,9 @@ exports.verifyBrokerOTP = async (req, res) => {
     broker.isVerified = true;
     broker.otp = null;
     broker.otpExpires = null;
+
+    // ✅ Prevent TTL deletion for verified brokers
+    broker.expiresAt = undefined;
 
     await broker.save();
 
