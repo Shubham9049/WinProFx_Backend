@@ -3,53 +3,55 @@ const Transaction = require("../models/Transaction");
 
 exports.handlePaymentCallback = async (req, res) => {
   try {
-    // console.log("Callback received:", req.body);
+    const txn = req.body.transaction; // ✅ correct structure
 
-    // 1. Save transaction first
+    if (!txn || !txn.id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid callback data" });
+    }
+
+    // 1. Check if transaction already processed
+    const existing = await Transaction.findOne({ transactionId: txn.id });
+    if (existing) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Duplicate callback ignored" });
+    }
+
+    // 2. Save transaction
     const transaction = new Transaction({
-      transactionId: req.body.id,
-      status: req.body.status,
-      merchantTxnId: req.body.merchant_txn_id,
-      merchantUserId: req.body.merchant_user_id,
-      amount: Number(req.body.amount),
-      type: req.body.type,
-      addedOn: new Date(req.body.added_on),
-      refId: req.body.ref_id,
-      gateway: req.body.gateway ? Number(req.body.gateway) : null,
-      merchant: req.body.merchant ? Number(req.body.merchant) : null,
-      wallet: req.body.wallet ? Number(req.body.wallet) : null,
-      currency: req.body.currency || "INR",
-      transactionPayinRequests: Array.isArray(
-        req.body.transaction_payin_requests
-      )
-        ? req.body.transaction_payin_requests
+      transactionId: txn.id,
+      status: txn.status,
+      merchantTxnId: txn.merchant_txn_id,
+      merchantUserId: txn.merchant_user_id,
+      amount: Number(txn.amount),
+      type: txn.type,
+      addedOn: new Date(txn.added_on),
+      refId: txn.ref_id,
+      gateway: txn.gateway ? Number(txn.gateway) : null,
+      merchant: txn.merchant ? Number(txn.merchant) : null,
+      wallet: txn.wallet ? Number(txn.wallet) : null,
+      currency: txn.currency || "INR",
+      transactionPayinRequests: Array.isArray(txn.transaction_payin_requests)
+        ? txn.transaction_payin_requests
         : [],
     });
 
     await transaction.save();
 
-    // 2. If payment is completed, call MoneyPlant AddBalance API
-    if (req.body.status === "completed") {
-      const accountno = req.body.merchant_user_id; // assuming this maps to trading accountno
-      const amount = req.body.amount;
-      const orderid = "ORD" + Date.now().toString().slice(-12); // unique <=16 char
+    // 3. If payment is completed, call MoneyPlant API
+    if (txn.status === "completed") {
+      const accountno = txn.merchant_user_id; // maps to trading accountno
+      const amount = Number(txn.amount);
+      const orderid = "ORD" + Date.now().toString().slice(-10); // <=16 char
 
       try {
         const mpResponse = await axios.post(
           "https://api.moneyplantfx.com/WSMoneyplant.aspx?type=SNDPAddBalance",
-          {
-            accountno,
-            amount,
-            orderid,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+          { accountno, amount, orderid },
+          { headers: { "Content-Type": "application/json" } }
         );
-
-        // console.log("MoneyPlant AddBalance Response:", mpResponse.data);
 
         return res.status(200).json({
           success: true,
@@ -66,13 +68,13 @@ exports.handlePaymentCallback = async (req, res) => {
       }
     }
 
-    // 3. If payment not completed
-    return res.status(200).send({
+    // 4. If not completed
+    return res.status(200).json({
       success: true,
       message: "Transaction saved but payment not completed",
     });
   } catch (error) {
     console.error("Error in callback:", error);
-    res.status(500).send({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
