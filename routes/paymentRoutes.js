@@ -1,5 +1,5 @@
 // route/paymentRoutes.js
-
+const axios = require("axios");
 const express = require("express");
 const router = express.Router();
 const { handlePaymentCallback } = require("../controllers/paymentController");
@@ -27,12 +27,10 @@ router.post("/deposit", async (req, res) => {
     const { amount, merchant_user_id } = req.body;
 
     if (!amount || !merchant_user_id) {
-      return res
-        .status(400)
-        .json({
-          status: "FAILED",
-          message: "amount and merchant_user_id required",
-        });
+      return res.status(400).json({
+        status: "FAILED",
+        message: "amount and merchant_user_id required",
+      });
     }
 
     // Ensure valid token
