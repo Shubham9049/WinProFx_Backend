@@ -28,17 +28,17 @@ const userSchema = new mongoose.Schema(
     resetOtp: { type: String, default: null },
     resetOtpExpires: { type: Date, default: null },
 
-    accountHolderName: { type: String, required: true },
-    accountNumber: { type: String, required: true },
+    accountHolderName: { type: String },
+    accountNumber: { type: String },
     ifscCode: { type: String }, // Optional depending on country
     iban: { type: String },
-    bankName: { type: String, required: true },
+    bankName: { type: String },
     bankAddress: { type: String },
 
-    identityFront: { type: String, required: true }, // File path or URL
-    identityBack: { type: String, required: true },
-    addressProof: { type: String, required: true },
-    selfieProof: { type: String, required: true },
+    identityFront: { type: String }, // File path or URL
+    identityBack: { type: String },
+    addressProof: { type: String },
+    selfieProof: { type: String },
   },
   { timestamps: true }
 );
