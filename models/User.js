@@ -39,6 +39,9 @@ const userSchema = new mongoose.Schema(
     identityBack: { type: String },
     addressProof: { type: String },
     selfieProof: { type: String },
+    isKycVerified: { type: Boolean, default: false },
+
+    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
@@ -53,5 +56,10 @@ userSchema.virtual("accounts", {
 // Ensure virtuals are included
 userSchema.set("toObject", { virtuals: true });
 userSchema.set("toJSON", { virtuals: true });
+
+userSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 300, partialFilterExpression: { isVerified: false } }
+);
 
 module.exports = mongoose.model("User", userSchema);

@@ -14,6 +14,8 @@ const {
   updateDocuments,
   updateBankDetails,
   changePassword,
+  verifyKyc, // ✅ new controller
+  getUnverifiedUsers,
 } = require("../controllers/authController");
 const upload = require("../middleware/cloudinaryUploader");
 
@@ -46,5 +48,7 @@ router.put(
 router.put("/bank/:email", updateBankDetails);
 
 router.put("/change-password/:email", changePassword);
+router.put("/:email/verify-kyc", verifyKyc);
+router.get("/unverified", getUnverifiedUsers);
 
 module.exports = router;

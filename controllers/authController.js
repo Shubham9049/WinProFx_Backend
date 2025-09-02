@@ -407,3 +407,38 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
+exports.verifyKyc = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { status } = req.body; // true = approve, false = reject
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      { isKycVerified: status },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: `User KYC ${status ? "approved ✅" : "rejected ❌"}`,
+      user,
+    });
+  } catch (error) {
+    console.error("Error verifying KYC:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.getUnverifiedUsers = async (req, res) => {
+  try {
+    const users = await User.find({ isKycVerified: false });
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching unverified users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
