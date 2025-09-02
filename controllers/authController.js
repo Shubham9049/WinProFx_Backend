@@ -81,6 +81,16 @@ exports.verifyOTP = async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
+    await sendEmail({
+      to: user.email,
+      subject: "Your Account is Verified",
+      html: `
+        <p>Hi ${user.fullName},</p>
+        <p>Congratulations! Your account has been successfully verified.</p>
+        <p>You can now log in and start using your account.</p>
+        <p>Thank you</p>
+      `,
+    });
 
     res.status(201).json({
       message: "User verified & registered",
@@ -422,6 +432,23 @@ exports.verifyKyc = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    await sendEmail({
+      to: user.email,
+      subject: `Your KYC has been ${status ? "approved ✅" : "rejected ❌"}`,
+      html: `
+        <p>Hi ${user.fullName},</p>
+        <p>Your KYC verification has been <b>${
+          status ? "approved" : "rejected"
+        }</b>.</p>
+        <p>${
+          status
+            ? "You can now access all features of your account."
+            : "Please contact support for further assistance."
+        }</p>
+        <p>Thank you</p>
+      `,
+    });
 
     res.json({
       message: `User KYC ${status ? "approved ✅" : "rejected ❌"}`,
