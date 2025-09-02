@@ -2,9 +2,14 @@
 const axios = require("axios");
 const express = require("express");
 const router = express.Router();
-const { handlePaymentCallback } = require("../controllers/paymentController");
+const {
+  handlePaymentCallback,
+  handleRameeCallback,
+} = require("../controllers/paymentController");
+const { encryptData, decryptData } = require("../utils/rameeCrypto");
 
 router.post("/callback", handlePaymentCallback);
+router.post("/rameePay/callback", handleRameeCallback);
 
 let DIGIPAY_TOKEN = null;
 let TOKEN_EXPIRY = null;
@@ -68,6 +73,71 @@ router.post("/deposit", async (req, res) => {
     return res.status(500).json({
       status: "FAILED",
       error: err.response?.data?.message || err.message,
+    });
+  }
+});
+
+const RAMEE_AGENT_CODE = process.env.RAMEEPAY_AGENT_CODE;
+const ORDER_GENERATE_URL = "https://apis.rameepay.io/order/generate";
+
+router.post("/ramee/deposit", async (req, res) => {
+  try {
+    const { amount, accountNo } = req.body;
+
+    const orderData = {
+      orderid: "ORD" + Date.now(),
+      amount,
+      currency: "INR",
+      accountNo,
+      redirect_url: "https://www.billiondollarfx.com/live-accounts",
+      callback_url:
+        "https://winprofx-backend.onrender.com/api/payment/rameePay/callback",
+    };
+
+    console.log("📝 Order Data:", orderData);
+
+    // Encrypt request
+    const encryptedReq = encryptData(orderData);
+    console.log("🔐 Encrypted Request:", encryptedReq);
+
+    // Send to RameePay
+    const response = await axios.post(
+      ORDER_GENERATE_URL,
+      { reqData: encryptedReq, agentCode: RAMEE_AGENT_CODE },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    console.log("📩 Ramee Response:", response.data);
+
+    // Validate response before decrypting
+    if (
+      !response.data ||
+      !response.data.data ||
+      response.data.status !== "true"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid response from RameePay",
+        raw: response.data,
+      });
+    }
+
+    // Decrypt response
+    const decrypted = decryptData(response.data.data);
+    console.log("🔓 Decrypted Response:", decrypted);
+
+    return res.json({
+      success: true,
+      payUrl: decrypted.url,
+      orderid: decrypted.orderid,
+      merchantid: decrypted.merchantid,
+    });
+  } catch (error) {
+    console.error("❌ Deposit Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create deposit order",
+      error: error.message,
     });
   }
 });

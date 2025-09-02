@@ -1,5 +1,6 @@
 const axios = require("axios");
 const Transaction = require("../models/Transaction");
+const { decryptData } = require("../utils/rameeCrypto");
 
 exports.handlePaymentCallback = async (req, res) => {
   try {
@@ -76,5 +77,46 @@ exports.handlePaymentCallback = async (req, res) => {
   } catch (error) {
     console.error("Error in callback:", error);
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.handleRameeCallback = async (req, res) => {
+  try {
+    const { data, agentCode } = req.body;
+    if (!data || !agentCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid payload" });
+    }
+
+    // 1. Decrypt Rameepay response
+    const txn = decryptData(data);
+
+    console.log("Decrypted Webhook:", txn);
+
+    if (txn.status === "SUCCESS") {
+      // 2. Call MoneyPlant API to credit balance
+      const accountno = txn.merchantid;
+      const amount = txn.realAmount;
+      const orderid = txn.orderid;
+
+      try {
+        const mpResponse = await axios.post(
+          "https://api.moneyplantfx.com/WSMoneyplant.aspx?type=SNDPAddBalance",
+          { accountno, amount, orderid },
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        console.log("MoneyPlant Response:", mpResponse.data);
+      } catch (err) {
+        console.error("MoneyPlant Error:", err.message);
+      }
+    }
+
+    // 3. Acknowledge webhook
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Callback Error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
